@@ -23,12 +23,12 @@ FusionEKF::FusionEKF() {
   Hj_ = MatrixXd(3, 4);
 
   //measurement covariance matrix - laser
-  R_laser_ << 0.0225, 0,
-        0, 0.0225;
+  R_laser_ << 0.00225, 0,
+        0, 0.00225;
 
   //measurement covariance matrix - radar
   R_radar_ << 0.09, 0, 0,
-        0, 0.09, 0,
+        0, 1, 0,
         0, 0, 0.09;
 
   /**
@@ -56,7 +56,12 @@ FusionEKF::FusionEKF() {
 	      0, 0, 0, 0,
 	      0, 0, 0, 0,
 	      0, 0, 0, 0;
-   
+    //state covariance matrix P
+    ekf_.P_ = MatrixXd(4, 4);
+    ekf_.P_ << 1, 0, 0, 0,
+	     0, 1, 0, 0,
+	     0, 0, 1000, 0,
+	     0, 0, 0, 1000;
    
 }
 
@@ -84,12 +89,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.x_ = VectorXd(4);
     ekf_.x_ << 1, 1, 1, 1;
 
-    //state covariance matrix P
-    ekf_.P_ = MatrixXd(4, 4);
-    ekf_.P_ << 1, 0, 0, 0,
-	     0, 1, 0, 0,
-	     0, 0, 1000, 0,
-	     0, 0, 0, 1000;
+   
     
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
@@ -101,8 +101,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
 	       float dx =a1 * cos(a2);
                float dy =  a1 * sin(a2);
-               float vx = (-1*cos(a2)*cos(a2)*cos(a2)*a3)/(2-3*cos(a2)*cos(a2));
-               float vy = ((2-3*cos(a2)*cos(a2)+cos(a2)*cos(a2)*cos(a2)*cos(a2))*a3)/((2-3*cos(a2)*cos(a2))*sin(a2));
+             
              
 		ekf_.x_ << dx,dy, 0, 0;  
                
@@ -147,7 +146,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 	float dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;	//dt - expressed in seconds
 	previous_timestamp_ = measurement_pack.timestamp_;
        
-      if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+     
 	float dt_2 = dt * dt;
 	float dt_3 = dt_2 * dt;
 	float dt_4 = dt_3 * dt;
@@ -162,7 +161,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 			   0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
 			   dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
 			   0, dt_3/2*noise_ay, 0, dt_2*noise_ay;
-        } 
+       
+     
         
    
    cout <<"current "<< measurement_pack.sensor_type_<<endl;
