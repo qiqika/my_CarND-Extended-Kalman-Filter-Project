@@ -23,12 +23,12 @@ FusionEKF::FusionEKF() {
   Hj_ = MatrixXd(3, 4);
 
   //measurement covariance matrix - laser
-  R_laser_ << 0.00225, 0,
-        0, 0.00225;
+  R_laser_ << 0.0225, 0,
+        0, 0.0225;
 
   //measurement covariance matrix - radar
   R_radar_ << 0.09, 0, 0,
-        0, 1, 0,
+        0, 0.0009, 0,
         0, 0, 0.09;
 
   /**
@@ -51,11 +51,8 @@ FusionEKF::FusionEKF() {
 	      0, 1, 0, 1,
 	      0, 0, 1, 0,
 	      0, 0, 0, 1;
-   ekf_.Q_ = MatrixXd(4, 4);
-   ekf_.Q_ << 0, 0, 0, 0,
-	      0, 0, 0, 0,
-	      0, 0, 0, 0,
-	      0, 0, 0, 0;
+   
+   ekf_.Q_  = MatrixXd::Zero(4,4);
     //state covariance matrix P
     ekf_.P_ = MatrixXd(4, 4);
     ekf_.P_ << 1, 0, 0, 0,
@@ -147,10 +144,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 	previous_timestamp_ = measurement_pack.timestamp_;
        
      
-	float dt_2 = dt * dt;
-	float dt_3 = dt_2 * dt;
-	float dt_4 = dt_3 * dt;
-        cout<< dt <<endl;
+	const float dt_2 = dt * dt;
+	const float dt_3 = dt_2 * dt;
+	const float dt_4 = dt_3 * dt;
+        //cout<< dt <<endl;
 	//Modify the F matrix so that the time is integrated
 	ekf_.F_(0, 2) = dt;
 	ekf_.F_(1, 3) = dt;
@@ -165,8 +162,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      
         
    
-   cout <<"current "<< measurement_pack.sensor_type_<<endl;
-   cout << "radar "<<MeasurementPackage::RADAR <<endl;
+   //cout <<"current "<< measurement_pack.sensor_type_<<endl;
+  // cout << "radar "<<MeasurementPackage::RADAR <<endl;
 
    ekf_.Predict();
   
@@ -185,7 +182,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // Radar updates
      ekf_.R_ = R_radar_;
      ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
-     
+     // cout<<"theta1:"<<atan(ekf_.x_(1)/ekf_.x_(0))<<endl;
+      //cout<<"theta2:"<<atan2(ekf_.x_(1),ekf_.x_(0))<<endl;
+     //cout<<"normalize2:"<<atan2(sin(atan2(ekf_.x_(1),ekf_.x_(0))), cos(atan2(ekf_.x_(1),ekf_.x_(0))))<<endl;
      ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
     // Laser updates

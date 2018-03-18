@@ -10,6 +10,12 @@ KalmanFilter::KalmanFilter() {}
 
 KalmanFilter::~KalmanFilter() {}
 
+void NormalizeAngle(double& phi)
+{
+  phi = atan2(sin(phi), cos(phi));
+}
+
+
 void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
                         MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in) {
   x_ = x_in;
@@ -46,10 +52,10 @@ void KalmanFilter::Update(const VectorXd &z) {
    K = P_*H_.transpose()*S.inverse();
    
    //new estimate
-   x_ = x_ + (K * y);
+   x_ += (K * y);
    long x_size = x_.size();
    MatrixXd I = MatrixXd::Identity(x_size, x_size);
-   P_ = (I - K * H_) * P_;
+   P_ -= K * H_ * P_;
    
 }
 
@@ -60,14 +66,14 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   */
    
    float rho = sqrt(x_(0)*x_(0)+x_(1)*x_(1));
-   float theta = atan(x_(1)/x_(0));
+   float theta = atan2(x_(1),x_(0));//my error: atan -pi/2~pi/2; atan2 -pi~pi
    float rho_dot = (x_(0)*x_(2)+x_(1)*x_(3))/rho ;
    VectorXd z_pred =  VectorXd(3);  
    z_pred<< rho, theta, rho_dot;
-
+  
    VectorXd y;
    y = z - z_pred;
-   
+   NormalizeAngle(y(1));//my error : ensure Radian Measure
   
    
    MatrixXd S;
@@ -77,8 +83,8 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
    K = P_*H_.transpose()*S.inverse();
    
    //new estimate
-   x_ = x_ + (K * y);
+   x_ += (K * y);
    long x_size = x_.size();
    MatrixXd I = MatrixXd::Identity(x_size, x_size);
-   P_ = (I - K * H_) * P_;
+   P_ -= K * H_ * P_;
 }
